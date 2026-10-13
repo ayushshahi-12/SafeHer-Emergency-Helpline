@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SafeHer - Emergency Helpline</title>
+<meta name="theme-color" content="#e11d48">
+<style>
+:root{--bg:#fff6f7;--card:#fff;--tx:#1f2430;--mu:#6b7280;--ac:#e11d48;--ac2:#9f1239;--ok:#15803d;--bd:#f3d4da;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12090c;--card:#1d1217;--tx:#f6eff1;--mu:#aa969c;--bd:#3b242c}}
+:root[data-theme="dark"]{--bg:#12090c;--card:#1d1217;--tx:#f6eff1;--mu:#aa969c;--bd:#3b242c}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:520px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:22px;margin:4px 0 2px}h2{font-size:16px;margin:0 0 8px}
+.sub{color:var(--mu);font-size:13px;margin:0 0 12px}
+.warn{background:var(--card);border:1px solid var(--ac);border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:12px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin-bottom:12px}
+#sos{display:block;width:190px;height:190px;border-radius:50%;margin:8px auto 6px;border:8px solid #fecdd3;background:var(--ac);color:#fff;font-size:42px;font-weight:800;letter-spacing:2px;box-shadow:0 8px 30px rgba(225,29,72,.45);cursor:pointer}
+#sos:active{transform:scale(.96);background:var(--ac2)}
+.hint{text-align:center;color:var(--mu);font-size:13px;margin:0 0 4px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{display:inline-block;flex:1 1 140px;text-align:center;padding:12px 10px;border-radius:12px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:600 15px inherit;text-decoration:none;cursor:pointer}
+.btn.red{background:var(--ac);color:#fff;border-color:var(--ac)}.btn.green{background:var(--ok);color:#fff;border-color:var(--ok)}
+input,select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+.c{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid var(--bd)}
+.c button{background:none;border:0;color:var(--ac);font:600 14px inherit;cursor:pointer}
+.mu{color:var(--mu);font-size:13px}
+.tag{display:inline-block;background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:2px 8px;font-size:12px}
+label.sw{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:15px}
+#ov{position:fixed;inset:0;background:rgba(159,18,57,.97);color:#fff;display:none;flex-direction:column;align-items:center;justify-content:center;z-index:9;text-align:center;padding:20px}
+#ov b{font-size:110px;line-height:1}
+#panel{display:none;border:2px solid var(--ac)}
+#panel.on{display:block;animation:p 1s infinite}
+@keyframes p{50%{box-shadow:0 0 0 6px rgba(225,29,72,.25)}}
+a.l{color:var(--ac);font-weight:600}
+</style>
+</head>
+<body>
+<main>
+  <h1>SafeHer</h1>
+  <p class="sub">Emergency alert &amp; live location sharing</p>
+  <div class="warn"><b>Demo prototype.</b> In real danger, call <b>112</b> first. This app cannot send SMS by itself - it prepares the message and you tap Send.</div>
+
+  <div class="card">
+    <button id="sos" type="button">SOS</button>
+    <p class="hint">Tap once. You get 5 seconds to cancel.</p>
+  </div>
+
+  <div id="panel" class="card">
+    <h2>SOS is active</h2>
+    <p class="mu" id="pmsg">Siren on. Send your live location now:</p>
+    <div class="row">
+      <a class="btn red" id="call112" href="tel:112">Call 112</a>
+      <a class="btn" id="smsA" href="#">SMS contacts</a>
+      <a class="btn" id="waA" href="#" target="_blank" rel="noopener">WhatsApp</a>
+      <button class="btn" id="shareB" type="button">Share...</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn green" id="safeB" type="button">I am safe - stop</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Live location</h2>
+    <div id="loc" class="mu">Waiting for GPS... allow location when asked.</div>
+    <div class="row" style="margin-top:8px">
+      <a class="btn" id="mapA" href="#" target="_blank" rel="noopener">Open in Maps</a>
+      <button class="btn" id="copyB" type="button">Copy link</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Trusted contacts</h2>
+    <div class="row"><input id="cn" placeholder="Name" autocomplete="off"><input id="cp" placeholder="Phone (+91...)" inputmode="tel" autocomplete="off"></div>
+    <div class="row" style="margin-top:8px"><button class="btn" id="addB" type="button">Add contact</button></div>
+    <div id="list"></div>
+    <p class="mu" style="margin:8px 0 0">Saved only on this device. Up to 5.</p>
+  </div>
+
+  <div class="card">
+    <h2>Safety options</h2>
+    <label class="sw">Loud siren on SOS <input type="checkbox" id="sirenT" checked style="width:auto"></label>
+    <label class="sw">Shake phone 3 times to trigger SOS <input type="checkbox" id="shakeT" style="width:auto"></label>
+    <h2 style="margin-top:10px">Check-in timer</h2>
+    <p class="mu" style="margin:0 0 8px">Travelling alone? If you do not tap "I am safe" in time, SOS starts. Keep this page open.</p>
+    <div class="row"><select id="tsel"><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="60">60 minutes</option></select>
+    <button class="btn" id="tstart" type="button">Start timer</button></div>
+    <p class="mu" id="tleft" style="margin:8px 0 0"></p>
+  </div>
+
+  <div class="card">
+    <h2>Helplines (India)</h2>
+    <div class="row">
+      <a class="btn" href="tel:112">112 Emergency</a><a class="btn" href="tel:100">100 Police</a>
+      <a class="btn" href="tel:181">181 Women Helpline</a><a class="btn" href="tel:1091">1091 Women in distress</a>
+    </div>
+    <p class="mu" style="margin:8px 0 0">Check numbers for your area before relying on them.</p>
+  </div>
+</main>
+
+<div id="ov"><div>SOS starting in</div><b id="cd">5</b><p>Siren, location message and call options will open.</p>
+  <button class="btn" id="cancelB" type="button" style="flex:none;min-width:200px">Cancel</button></div>
+
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s)};
+  var pos=null,siren=null,cdT=null,active=false,tmr=null,shakeOn=false,spikes=[];
+  var store={
+    get:function(){try{return JSON.parse(localStorage.getItem("sh_contacts")||"[]")}catch(e){return[]}},
+    set:function(v){try{localStorage.setItem("sh_contacts",JSON.stringify(v))}catch(e){}}
+  };
+  function esc(s){var d=document.createElement("div");d.textContent=s;return d.innerHTML}
+  function mapsLink(){return pos?"https://maps.google.com/?q="+pos.lat.toFixed(6)+","+pos.lng.toFixed(6):""}
+  function message(){
+    var m="EMERGENCY! I need help. ";
+    m+=pos?("My live location: "+mapsLink()+" (accuracy ~"+pos.acc+" m, "+pos.t.toLocaleTimeString()+"). "):"I could not get my location. ";
+    return m+"Please call me or call 112.";
+  }
+  function refresh(){
+    var l=$("#loc");
+    if(pos){
+      l.innerHTML="Lat "+pos.lat.toFixed(5)+", Lng "+pos.lng.toFixed(5)+' <span class="tag">+/- '+pos.acc+' m</span><br>Updated '+pos.t.toLocaleTimeString();
+      $("#mapA").href=mapsLink();
+    }
+    var nums=store.get().map(function(c){return c.p}).join(",");
+    $("#smsA").href="sms:"+nums+"?&body="+encodeURIComponent(message());
+    $("#waA").href="https://wa.me/?text="+encodeURIComponent(message());
+  }
+  function startGPS(){
+    if(!navigator.geolocation){$("#loc").textContent="Location is not available in this browser.";return}
+    navigator.geolocation.watchPosition(function(p){
+      pos={lat:p.coords.latitude,lng:p.coords.longitude,acc:Math.round(p.coords.accuracy),t:new Date()};refresh();
+    },function(e){
+      $("#loc").textContent="Location unavailable ("+e.message+"). Allow location access, or open this page directly in Chrome/Safari.";
+    },{enableHighAccuracy:true,maximumAge:5000,timeout:20000});
+  }
+  function sirenOn(){
+    if(!$("#sirenT").checked||siren)return;
+    try{
+      var c=new(window.AudioContext||window.webkitAudioContext)(),o=c.createOscillator(),g=c.createGain(),up=true;
+      o.type="square";g.gain.value=.15;o.connect(g);g.connect(c.destination);o.start();
+      var iv=setInterval(function(){o.frequency.setValueAtTime(up?900:600,c.currentTime);up=!up},450);
+      siren={c:c,o:o,iv:iv};
+    }catch(e){}
+  }
+  function sirenOff(){
+    if(!siren)return;clearInterval(siren.iv);
+    try{siren.o.stop();siren.c.close()}catch(e){}siren=null;
+  }
+  function buzz(p){try{navigator.vibrate&&navigator.vibrate(p)}catch(e){}}
+  function startSOS(){
+    if(active||cdT)return;
+    var n=5;$("#cd").textContent=n;$("#ov").style.display="flex";buzz([200,100,200]);
+    cdT=setInterval(function(){
+      n--;$("#cd").textContent=n;buzz(80);
+      if(n<=0){clearInterval(cdT);cdT=null;$("#ov").style.display="none";trigger()}
+    },1000);
+  }
+  function cancelSOS(){clearInterval(cdT);cdT=null;$("#ov").style.display="none"}
+  function trigger(){
+    active=true;refresh();sirenOn();buzz([500,200,500,200,500]);
+    $("#panel").classList.add("on");$("#panel").scrollIntoView({behavior:"smooth"});
+    $("#pmsg").textContent=pos?"Siren on. Send your live location now:":"Siren on, but GPS has no fix yet - call 112 and say where you are.";
+  }
+  function safe(){
+    active=false;sirenOff();buzz(0);$("#panel").classList.remove("on");
+    clearInterval(tmr);tmr=null;$("#tleft").textContent="";
+  }
+  function renderContacts(){
+    var a=store.get(),h="";
+    a.forEach(function(c,i){h+='<div class="c"><span><b>'+esc(c.n)+'</b><br><span class="mu">'+esc(c.p)+'</span></span><button type="button" data-i="'+i+'">Remove</button></div>'});
+    $("#list").innerHTML=h||'<p class="mu">No contacts yet.</p>';refresh();
+  }
+  function startTimer(){
+    clearInterval(tmr);
+    var end=Date.now()+parseInt($("#tsel").value,10)*60000;
+    tmr=setInterval(function(){
+      var s=Math.round((end-Date.now())/1000);
+      if(s<=0){clearInterval(tmr);tmr=null;$("#tleft").textContent="Time is up.";startSOS();return}
+      $("#tleft").textContent="Check-in due in "+Math.floor(s/60)+"m "+(s%60)+"s. Tap 'I am safe' to stop.";
+    },1000);
+    $("#tleft").textContent="Timer started.";
+  }
+  function onMotion(e){
+    var a=e.accelerationIncludingGravity;if(!a)return;
+    var m=Math.sqrt((a.x||0)*(a.x||0)+(a.y||0)*(a.y||0)+(a.z||0)*(a.z||0)),now=Date.now();
+    if(m>28){spikes.push(now);spikes=spikes.filter(function(t){return now-t<1500});if(spikes.length>=3){spikes=[];startSOS()}}
+  }
+  $("#shakeT").addEventListener("change",function(e){
+    if(!e.target.checked){window.removeEventListener("devicemotion",onMotion);shakeOn=false;return}
+    var go=function(){window.addEventListener("devicemotion",onMotion);shakeOn=true};
+    if(window.DeviceMotionEvent&&typeof DeviceMotionEvent.requestPermission==="function"){
+      DeviceMotionEvent.requestPermission().then(function(r){r==="granted"?go():(e.target.checked=false)}).catch(function(){e.target.checked=false});
+    }else go();
+  });
+  $("#sos").addEventListener("click",startSOS);
+  $("#cancelB").addEventListener("click",cancelSOS);
+  $("#safeB").addEventListener("click",safe);
+  $("#tstart").addEventListener("click",startTimer);
+  $("#addB").addEventListener("click",function(){
+    var n=$("#cn").value.trim(),p=$("#cp").value.replace(/[^\d+]/g,""),a=store.get();
+    if(!n||p.length<6||a.length>=5)return;
+    a.push({n:n,p:p});store.set(a);$("#cn").value="";$("#cp").value="";renderContacts();
+  });
+  $("#list").addEventListener("click",function(e){
+    var i=e.target.getAttribute&&e.target.getAttribute("data-i");if(i===null||i===undefined)return;
+    var a=store.get();a.splice(parseInt(i,10),1);store.set(a);renderContacts();
+  });
+  $("#copyB").addEventListener("click",function(){
+    var t=pos?mapsLink():"";if(!t){return}
+    try{navigator.clipboard.writeText(t);$("#copyB").textContent="Copied"}catch(e){window.prompt("Copy this link:",t)}
+    setTimeout(function(){$("#copyB").textContent="Copy link"},1500);
+  });
+  $("#shareB").addEventListener("click",function(){
+    if(navigator.share){navigator.share({title:"SafeHer SOS",text:message()}).catch(function(){})}
+    else window.prompt("Copy this message:",message());
+  });
+  renderContacts();startGPS();
+})();
+</script>
+</body>
+</html>
